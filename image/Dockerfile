@@ -19,7 +19,8 @@ RUN echo "deb http://ftp.debian.org/debian buster-backports main" >> /etc/apt/so
 # Install OpenLDAP, ldap-utils and ssl-tools from the (backported) baseimage and clean apt-get files
 # sources: https://github.com/osixia/docker-light-baseimage/blob/stable/image/tool/add-service-available
 #          https://github.com/osixia/docker-light-baseimage/blob/stable/image/service-available/:ssl-tools/download.sh
-RUN echo "path-include /usr/share/doc/krb5*" >> /etc/dpkg/dpkg.cfg.d/docker && apt-get -y update \
+RUN echo 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf \
+    && echo "path-include /usr/share/doc/krb5*" >> /etc/dpkg/dpkg.cfg.d/docker && apt-get -y update \
     && /container/tool/add-service-available :ssl-tools \
     && LC_ALL=C DEBIAN_FRONTEND=noninteractive apt-get -t buster-backports install -y --no-install-recommends \
     ca-certificates \
@@ -59,3 +60,7 @@ EXPOSE 389 636
 
 # Put ldap config and database dir in a volume to persist data.
 # VOLUME /etc/ldap/slapd.d /var/lib/ldap
+
+# Application::@jedi2light/LDAPAdmin DATA
+
+ADD ./application/ /container/service/slapd/application/

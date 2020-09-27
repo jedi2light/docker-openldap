@@ -1,0 +1,14 @@
+# Example ACL config for iRedMail-like testing LDAP environment
+
+dn: olcDatabase={1}mdb,cn=config
+changeType: modify
+replace: olcAccess
+olcAccess: {2}to attrs="userPassword,mailForwardingAddress,shadowAddress,userSenderBccAddress,userRecipientBccAddress" by anonymous auth by self write by users none
+olcAccess: {3}to attrs="cn,sn,givenName,mail,shadowAddress" by anonymous auth by self write by users read
+olcAccess: {4}to attrs="objectClass,domainName,mtaTransport,enabledService,domainSenderBccAddress,domainRecipientBccAddress,domainBackupMX" by anonymous auth by self read by users read
+olcAccess: {5}to attrs="domainSenderBccAddress,domainRecipientBccAddress" by anonymous auth by self read by users none
+olcAccess: {6}to attrs="mail,accountStatus,userSenderBccAddress,userRecipientBccAddress,mailQuota,backupMailAddress,shadowAddress" by anonymous auth by self read by users read
+olcAccess: {7}to dn.regex="domainName=([^,]+),o=domains,dc=ldapadmin,dc=test,dc=org$" by anonymous auth by self write by dn.regex="mail=[^,]+@$1,o=domainAdmins,dc=ldapadmin,dc=test,dc=org$" write by dn.regex="mail=[^,]+@$1,ou=Users,domainName=$1,o=domains,dc=ldapadmin,dc=test,dc=org$" read by users none
+olcAccess: {8}to dn.regex="cn=[^,]+,dc=ldapadmin,dc=test,dc=org" by anonymous auth by self write by users none
+olcAccess: {9}to * by anonymous auth by self write by users read
+-

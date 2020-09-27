@@ -295,18 +295,40 @@ EOF
       fi
     fi
 
-    # start OpenLDAP
-    log-helper info "Start OpenLDAP..."
-    # At this stage, we can just listen to ldap:// and ldap:// without naming any names
-    if log-helper level ge debug; then
-      slapd -h "ldap:/// ldapi:///" -u openldap -g openldap -d "$LDAP_LOG_LEVEL" 2>&1 &
-    else
-      slapd -h "ldap:/// ldapi:///" -u openldap -g openldap
-    fi
+    # @jedi2light: manage slapd daemon state by three functions: start/stop/restart
+
+    function start_slapd () {
+      # start OpenLDAP
+      log-helper info "Start OpenLDAP..."
+      # At this stage, we can just listen to ldap:// and ldap:// without naming any names
+      if log-helper level ge debug; then
+        slapd -h "ldap:/// ldapi:///" -u openldap -g openldap -d "$LDAP_LOG_LEVEL" 2>&1 &
+      else
+        slapd -h "ldap:/// ldapi:///" -u openldap -g openldap
+      fi
 
 
-    log-helper info "Waiting for OpenLDAP to start..."
-    while [ ! -e /run/slapd/slapd.pid ]; do sleep 0.1; done
+      log-helper info "Waiting for OpenLDAP to start..."
+      while [ ! -e /run/slapd/slapd.pid ]; do sleep 0.1; done
+    }
+
+    function stop_slapd () {
+      # stop OpenLDAP
+      log-helper info "Stop OpenLDAP..."
+      kill $(cat /run/slapd/slapd.pid)
+
+
+      log-helper info "Waiting for OpenLDAP to stop..."
+      while [ -e /run/slapd/slapd.pid ] > /dev/null; do sleep 0.1; done
+    }
+
+    function restart_slapd () {
+      stop_slapd
+      start_slapd
+    }
+
+    start_slapd
+
 
     #
     # setup bootstrap config - Part 2
@@ -538,6 +560,50 @@ EOF
     log-helper info "Remove config files..."
     rm -rf ${CONTAINER_SERVICE_DIR}/slapd/assets/config
   fi
+
+  #
+  # Application::@jedi2light/LDAPAdmin BEGIN
+  #
+
+  log-helper info "...LDAPAdmin: Removing conflicting schemas ..."
+
+  rm /etc/ldap/slapd.d/cn\=config/cn\=schema/cn\=\{7\}mail.ldif
+
+  log-helper info "...LDAPAdmin: Starting OpenLDAP ..."
+
+  start_slapd
+
+  log-helper info "...LDAPAdmin: Applying the iRedMail schema ..."
+
+  ldapadd -c -Y EXTERNAL -Q -H ldapi:/// -f \
+    ${CONTAINER_SERVICE_DIR}/slapd/application/jedi2light-ldapadmin/ldif/schemas/iredmail.ldif
+
+  log-helper info "...LDAPAdmin: Altering OpenLDAP settings with ACL ..."
+
+  ldapmodify -c -Y EXTERNAL -Q -H ldapi:/// -f \
+    ${CONTAINER_SERVICE_DIR}/slapd/application/jedi2light-ldapadmin/ldif/settings/acl.ldif
+
+  log-helper info "...LDAPAdmin: Altering OpenLDAP settings with modules ..."
+
+  ldapmodify -c -Y EXTERNAL -Q -H ldapi:/// -f \
+    ${CONTAINER_SERVICE_DIR}/slapd/application/jedi2light-ldapadmin/ldif/settings/modules.ldif
+
+  log-helper info "...LDAPAdmin: Restarting OpenLDAP ..."
+
+  restart_slapd
+
+  log-helper info "...LDAPAdmin: Applying LDAPAdmin application initial demo data"
+
+  ldapadd -H ldap://localhost:389 -D cn=admin,${LDAP_BASE_DN} -w ${LDAP_ADMIN_PASSWORD} \
+    -f ${CONTAINER_SERVICE_DIR}/slapd/application/jedi2light-ldapadmin/ldif/initial/initial.ldif
+
+  log-helper info "...LDAPAdmin: Stopping OpenLDAP ..."
+
+  stop_slapd
+
+  #
+  # Application::@jedi2light/LDAPAdmin END
+  #
 
   #
   # setup done :)

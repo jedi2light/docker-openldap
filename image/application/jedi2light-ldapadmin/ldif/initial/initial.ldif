@@ -1,0 +1,66 @@
+# Initial data for iRedMail-like testing LDAP environment
+
+## Domains
+dn: o=domains,dc=ldapadmin,dc=test,dc=org
+objectClass: organization
+o: domains
+
+## Domains / ldapadmin.test.org
+dn: domainName=ldapadmin.test.org,o=domains,dc=ldapadmin,dc=test,dc=org
+objectClass: mailDomain
+domainName: ldapadmin.test.org
+mtaTransport: dovecot
+
+## Domains / ldapadmin.test.org / Users
+dn: ou=Users,domainName=ldapadmin.test.org,o=domains,dc=ldapadmin,dc=test,dc=org
+objectClass: organizationalUnit
+objectClass: top
+ou: Users
+description: Users
+
+## Domains / ldapadmin.test.org / Aliases
+dn: ou=Aliases,domainName=ldapadmin.test.org,o=domains,dc=ldapadmin,dc=test,dc=org
+objectClass: organizationalUnit
+objectClass: top
+ou: Aliases
+description: Aliases
+
+## Domains / ldapadmin.test.org / Users / Example User
+dn: mail=euser@ldapadmin.test.org,ou=Users,domainName=ldapadmin.test.org,o=domains,dc=ldapadmin,dc=test,dc=org
+objectClass: mailUser
+objectClass: inetOrgPerson
+objectClass: shadowAccount
+givenName: Example
+sn: User
+uid: euser
+cn: Example User
+accountStatus: active
+enabledService: mail
+mail: euser@ldapadmin.test.org
+mailQuota: 1048576
+shadowAddress: example.user@ldapadmin.test.org
+
+## Domains / ldapadmin.test.org / ExampleGroupUnit
+dn: ou=ExampleGroupUnit,domainName=ldapadmin.test.org,o=domains,dc=ldapadmin,dc=test,dc=org
+objectClass: organizationalUnit
+objectClass: top
+ou: ExampleGroupUnit
+description: Example Group Unit
+
+## Domains / ldapadmin.test.org / ExampleGroupUnit / example-group
+## With Example User member by default
+
+dn: cn=example-group,ou=ExampleGroupUnit,domainName=ldapadmin.test.org,o=domains,dc=ldapadmin,dc=test,dc=org
+objectClass: groupOfNames
+cn: example-group
+member: mail=euser@ldapadmin.test.org,ou=Users,domainName=ldapadmin.test.org,o=domains,dc=ldapadmin,dc=test,dc=org
+
+## Domains / ldapadmin.test.org / Aliases / Example Alias
+dn:  cn=Example Alias,ou=Aliases,domainName=ldapadmin.test.org,o=domains,dc=ldapadmin,dc=test,dc=org
+objectClass: top
+objectClass: mailAlias
+cn: Example Alias
+mailForwardingAddress: euser@ldapadmin.test.org
+mail: ealias@ldapadmin.test.org
+accountStatus: active
+

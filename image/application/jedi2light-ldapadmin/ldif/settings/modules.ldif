@@ -1,0 +1,6 @@
+# PW SHA2 module: allows to store passwords
+
+dn: cn=module{0},cn=config
+changetype: modify
+add: olcModuleLoad
+olcModuleLoad: pw-sha2
